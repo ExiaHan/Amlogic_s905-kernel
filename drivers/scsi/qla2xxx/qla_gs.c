@@ -3261,9 +3261,6 @@ static void qla24xx_async_gpsc_sp_done(void *s, int res)
 	    "Async done-%s res %x, WWPN %8phC \n",
 	    sp->name, res, fcport->port_name);
 
-	if (res == QLA_FUNCTION_TIMEOUT)
-		return;
-
 	if (res == (DID_ERROR << 16)) {
 		/* entry status error */
 		goto done;
@@ -4447,9 +4444,9 @@ int qla24xx_async_gpnft(scsi_qla_host_t *vha, u8 fc4_type, srb_t *sp)
 	sp->u.iocb_cmd.timeout = qla2x00_async_iocb_timeout;
 	qla2x00_init_timer(sp, qla2x00_get_async_timeout(vha) + 2);
 
-	rspsz = sp->u.iocb_cmd.u.ctarg.rsp_size;
-	memset(sp->u.iocb_cmd.u.ctarg.rsp, 0, sp->u.iocb_cmd.u.ctarg.rsp_size);
-	memset(sp->u.iocb_cmd.u.ctarg.req, 0, sp->u.iocb_cmd.u.ctarg.req_size);
+	rspsz = sizeof(struct ct_sns_gpnft_rsp) +
+		((vha->hw->max_fibre_devices - 1) *
+		    sizeof(struct ct_sns_gpn_ft_data));
 
 	ct_sns = (struct ct_sns_pkt *)sp->u.iocb_cmd.u.ctarg.req;
 	/* CT_IU preamble  */

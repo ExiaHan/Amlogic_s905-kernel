@@ -201,8 +201,7 @@ static int tcf_pedit_init(struct net *net, struct nlattr *nla,
 			goto out_release;
 		}
 	} else {
-		ret = err;
-		goto out_free;
+		return err;
 	}
 
 	p = to_pedit(*a);

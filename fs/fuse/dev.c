@@ -129,13 +129,9 @@ static bool fuse_block_alloc(struct fuse_conn *fc, bool for_background)
 
 static void fuse_drop_waiting(struct fuse_conn *fc)
 {
-	/*
-	 * lockess check of fc->connected is okay, because atomic_dec_and_test()
-	 * provides a memory barrier mached with the one in fuse_wait_aborted()
-	 * to ensure no wake-up is missed.
-	 */
-	if (atomic_dec_and_test(&fc->num_waiting) &&
-	    !READ_ONCE(fc->connected)) {
+	if (fc->connected) {
+		atomic_dec(&fc->num_waiting);
+	} else if (atomic_dec_and_test(&fc->num_waiting)) {
 		/* wake up aborters */
 		wake_up_all(&fc->blocked_waitq);
 	}
@@ -395,19 +391,12 @@ static void request_end(struct fuse_conn *fc, struct fuse_req *req)
 	if (test_bit(FR_BACKGROUND, &req->flags)) {
 		spin_lock(&fc->lock);
 		clear_bit(FR_BACKGROUND, &req->flags);
-		if (fc->num_background == fc->max_background) {
+		if (fc->num_background == fc->max_background)
 			fc->blocked = 0;
+
+		/* Wake up next waiter, if any */
+		if (!fc->blocked && waitqueue_active(&fc->blocked_waitq))
 			wake_up(&fc->blocked_waitq);
-		} else if (!fc->blocked) {
-			/*
-			 * Wake up next waiter, if any.  It's okay to use
-			 * waitqueue_active(), as we've already synced up
-			 * fc->blocked with waiters with the wake_up() call
-			 * above.
-			 */
-			if (waitqueue_active(&fc->blocked_waitq))
-				wake_up(&fc->blocked_waitq);
-		}
 
 		if (fc->num_background == fc->congestion_threshold && fc->sb) {
 			clear_bdi_congested(fc->sb->s_bdi, BLK_RW_SYNC);
@@ -1322,14 +1311,12 @@ static ssize_t fuse_dev_do_read(struct fuse_dev *fud, struct file *file,
 		goto out_end;
 	}
 	list_move_tail(&req->list, &fpq->processing);
-	__fuse_get_request(req);
-	set_bit(FR_SENT, &req->flags);
 	spin_unlock(&fpq->lock);
+	set_bit(FR_SENT, &req->flags);
 	/* matches barrier in request_wait_answer() */
 	smp_mb__after_atomic();
 	if (test_bit(FR_INTERRUPTED, &req->flags))
 		queue_interrupt(fiq, req);
-	fuse_put_request(fc, req);
 
 	return reqsize;
 
@@ -1728,10 +1715,8 @@ static int fuse_retrieve(struct fuse_conn *fc, struct inode *inode,
 	req->in.args[1].size = total_len;
 
 	err = fuse_request_send_notify_reply(fc, req, outarg->notify_unique);
-	if (err) {
+	if (err)
 		fuse_retrieve_end(fc, req);
-		fuse_put_request(fc, req);
-	}
 
 	return err;
 }
@@ -1890,20 +1875,16 @@ static ssize_t fuse_dev_do_write(struct fuse_dev *fud,
 
 	/* Is it an interrupt reply? */
 	if (req->intr_unique == oh.unique) {
-		__fuse_get_request(req);
 		spin_unlock(&fpq->lock);
 
 		err = -EINVAL;
-		if (nbytes != sizeof(struct fuse_out_header)) {
-			fuse_put_request(fc, req);
+		if (nbytes != sizeof(struct fuse_out_header))
 			goto err_finish;
-		}
 
 		if (oh.error == -ENOSYS)
 			fc->no_interrupt = 1;
 		else if (oh.error == -EAGAIN)
 			queue_interrupt(&fc->iq, req);
-		fuse_put_request(fc, req);
 
 		fuse_copy_finish(cs);
 		return nbytes;
@@ -2171,8 +2152,6 @@ EXPORT_SYMBOL_GPL(fuse_abort_conn);
 
 void fuse_wait_aborted(struct fuse_conn *fc)
 {
-	/* matches implicit memory barrier in fuse_drop_waiting() */
-	smp_mb();
 	wait_event(fc->blocked_waitq, atomic_read(&fc->num_waiting) == 0);
 }
 

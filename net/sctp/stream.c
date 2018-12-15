@@ -535,6 +535,7 @@ int sctp_send_add_streams(struct sctp_association *asoc,
 		goto out;
 	}
 
+	stream->incnt = incnt;
 	stream->outcnt = outcnt;
 
 	asoc->strreset_outstanding = !!out + !!in;

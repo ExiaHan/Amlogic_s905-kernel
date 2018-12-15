@@ -5804,10 +5804,9 @@ int ext4_mark_iloc_dirty(handle_t *handle,
 {
 	int err = 0;
 
-	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb)))) {
-		put_bh(iloc->bh);
+	if (unlikely(ext4_forced_shutdown(EXT4_SB(inode->i_sb))))
 		return -EIO;
-	}
+
 	if (IS_I_VERSION(inode))
 		inode_inc_iversion(inode);
 

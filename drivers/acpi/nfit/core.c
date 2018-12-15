@@ -2845,9 +2845,9 @@ static int acpi_nfit_query_poison(struct acpi_nfit_desc *acpi_desc)
 		return rc;
 
 	if (ars_status_process_records(acpi_desc))
-		dev_err(acpi_desc->dev, "Failed to process ARS records\n");
+		return -ENOMEM;
 
-	return rc;
+	return 0;
 }
 
 static int ars_register(struct acpi_nfit_desc *acpi_desc,

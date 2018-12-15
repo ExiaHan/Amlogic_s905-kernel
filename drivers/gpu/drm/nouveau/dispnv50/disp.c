@@ -843,16 +843,22 @@ nv50_mstc_atomic_best_encoder(struct drm_connector *connector,
 {
 	struct nv50_head *head = nv50_head(connector_state->crtc);
 	struct nv50_mstc *mstc = nv50_mstc(connector);
-
-	return &mstc->mstm->msto[head->base.index]->encoder;
+	if (mstc->port) {
+		struct nv50_mstm *mstm = mstc->mstm;
+		return &mstm->msto[head->base.index]->encoder;
+	}
+	return NULL;
 }
 
 static struct drm_encoder *
 nv50_mstc_best_encoder(struct drm_connector *connector)
 {
 	struct nv50_mstc *mstc = nv50_mstc(connector);
-
-	return &mstc->mstm->msto[0]->encoder;
+	if (mstc->port) {
+		struct nv50_mstm *mstm = mstc->mstm;
+		return &mstm->msto[0]->encoder;
+	}
+	return NULL;
 }
 
 static enum drm_mode_status

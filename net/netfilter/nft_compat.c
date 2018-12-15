@@ -54,11 +54,9 @@ static bool nft_xt_put(struct nft_xt *xt)
 	return false;
 }
 
-static int nft_compat_chain_validate_dependency(const struct nft_ctx *ctx,
-						const char *tablename)
+static int nft_compat_chain_validate_dependency(const char *tablename,
+						const struct nft_chain *chain)
 {
-	enum nft_chain_types type = NFT_CHAIN_T_DEFAULT;
-	const struct nft_chain *chain = ctx->chain;
 	const struct nft_base_chain *basechain;
 
 	if (!tablename ||
@@ -66,12 +64,9 @@ static int nft_compat_chain_validate_dependency(const struct nft_ctx *ctx,
 		return 0;
 
 	basechain = nft_base_chain(chain);
-	if (strcmp(tablename, "nat") == 0) {
-		if (ctx->family != NFPROTO_BRIDGE)
-			type = NFT_CHAIN_T_NAT;
-		if (basechain->type->type != type)
-			return -EINVAL;
-	}
+	if (strcmp(tablename, "nat") == 0 &&
+	    basechain->type->type != NFT_CHAIN_T_NAT)
+		return -EINVAL;
 
 	return 0;
 }
@@ -328,7 +323,8 @@ static int nft_target_validate(const struct nft_ctx *ctx,
 		if (target->hooks && !(hook_mask & target->hooks))
 			return -EINVAL;
 
-		ret = nft_compat_chain_validate_dependency(ctx, target->table);
+		ret = nft_compat_chain_validate_dependency(target->table,
+							   ctx->chain);
 		if (ret < 0)
 			return ret;
 	}
@@ -574,7 +570,8 @@ static int nft_match_validate(const struct nft_ctx *ctx,
 		if (match->hooks && !(hook_mask & match->hooks))
 			return -EINVAL;
 
-		ret = nft_compat_chain_validate_dependency(ctx, match->table);
+		ret = nft_compat_chain_validate_dependency(match->table,
+							   ctx->chain);
 		if (ret < 0)
 			return ret;
 	}

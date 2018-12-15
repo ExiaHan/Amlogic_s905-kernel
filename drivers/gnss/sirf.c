@@ -16,7 +16,6 @@
 #include <linux/pm.h>
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
-#include <linux/sched.h>
 #include <linux/serdev.h>
 #include <linux/slab.h>
 #include <linux/wait.h>
@@ -84,7 +83,7 @@ static int sirf_write_raw(struct gnss_device *gdev, const unsigned char *buf,
 	int ret;
 
 	/* write is only buffered synchronously */
-	ret = serdev_device_write(serdev, buf, count, MAX_SCHEDULE_TIMEOUT);
+	ret = serdev_device_write(serdev, buf, count, 0);
 	if (ret < 0)
 		return ret;
 

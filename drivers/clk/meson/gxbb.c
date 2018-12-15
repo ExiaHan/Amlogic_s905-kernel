@@ -213,6 +213,7 @@ static struct clk_regmap gxbb_fixed_pll = {
 		.ops = &meson_clk_pll_ro_ops,
 		.parent_names = (const char *[]){ "xtal" },
 		.num_parents = 1,
+		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
 
@@ -275,10 +276,6 @@ static struct clk_regmap gxbb_hdmi_pll = {
 		.ops = &meson_clk_pll_ro_ops,
 		.parent_names = (const char *[]){ "hdmi_pll_pre_mult" },
 		.num_parents = 1,
-		/*
-		 * Display directly handle hdmi pll registers ATM, we need
-		 * NOCACHE to keep our view of the clock as accurate as possible
-		 */
 		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
@@ -337,10 +334,6 @@ static struct clk_regmap gxl_hdmi_pll = {
 		.ops = &meson_clk_pll_ro_ops,
 		.parent_names = (const char *[]){ "xtal" },
 		.num_parents = 1,
-		/*
-		 * Display directly handle hdmi pll registers ATM, we need
-		 * NOCACHE to keep our view of the clock as accurate as possible
-		 */
 		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
@@ -378,6 +371,7 @@ static struct clk_regmap gxbb_sys_pll = {
 		.ops = &meson_clk_pll_ro_ops,
 		.parent_names = (const char *[]){ "xtal" },
 		.num_parents = 1,
+		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
 
@@ -424,6 +418,7 @@ static struct clk_regmap gxbb_gp0_pll = {
 		.ops = &meson_clk_pll_ops,
 		.parent_names = (const char *[]){ "xtal" },
 		.num_parents = 1,
+		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
 
@@ -477,6 +472,7 @@ static struct clk_regmap gxl_gp0_pll = {
 		.ops = &meson_clk_pll_ops,
 		.parent_names = (const char *[]){ "xtal" },
 		.num_parents = 1,
+		.flags = CLK_GET_RATE_NOCACHE,
 	},
 };
 
@@ -526,17 +522,6 @@ static struct clk_regmap gxbb_fclk_div3 = {
 		.ops = &clk_regmap_gate_ops,
 		.parent_names = (const char *[]){ "fclk_div3_div" },
 		.num_parents = 1,
-		/*
-		 * FIXME:
-		 * This clock, as fdiv2, is used by the SCPI FW and is required
-		 * by the platform to operate correctly.
-		 * Until the following condition are met, we need this clock to
-		 * be marked as critical:
-		 * a) The SCPI generic driver claims and enable all the clocks
-		 *    it needs
-		 * b) CCF has a clock hand-off mechanism to make the sure the
-		 *    clock stays on until the proper driver comes along
-		 */
 		.flags = CLK_IS_CRITICAL,
 	},
 };
