@@ -2208,8 +2208,7 @@ int try_to_unuse(unsigned int type, bool frontswap,
 		 */
 		if (PageSwapCache(page) &&
 		    likely(page_private(page) == entry.val) &&
-		    (!PageTransCompound(page) ||
-		     !swap_page_trans_huge_swapped(si, entry)))
+		    !page_swapped(page))
 			delete_from_swap_cache(compound_head(page));
 
 		/*

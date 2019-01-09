@@ -931,11 +931,11 @@ static void __device_release_driver(struct device *dev, struct device *parent)
 
 		while (device_links_busy(dev)) {
 			device_unlock(dev);
-			if (parent && dev->bus->need_parent_lock)
+			if (parent)
 				device_unlock(parent);
 
 			device_links_unbind_consumers(dev);
-			if (parent && dev->bus->need_parent_lock)
+			if (parent)
 				device_lock(parent);
 
 			device_lock(dev);
