@@ -184,6 +184,7 @@
 			interrupt-parent = <&gpio_intc>;
 			/* MAC_INTR on GPIOZ_15 */
 			interrupts = <29 IRQ_TYPE_LEVEL_LOW>;
+			eee-broken-1000t;
 		};
 	};
 };
