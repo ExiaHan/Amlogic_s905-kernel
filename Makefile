@@ -948,9 +948,11 @@ mod_sign_cmd = true
 endif
 export mod_sign_cmd
 
+HOST_LIBELF_LIBS = $(shell pkg-config libelf --libs 2>/dev/null || echo -lelf)
+
 ifdef CONFIG_STACK_VALIDATION
   has_libelf := $(call try-run,\
-		echo "int main() {}" | $(HOSTCC) $(HOSTCFLAGS) -xc -o /dev/null $(HOSTLDFLAGS) -lelf -,1,0)
+		echo "int main() {}" | $(HOSTCC) $(HOSTCFLAGS) -xc -o /dev/null $(HOSTLDFLAGS) $(HOST_LIBELF_LIBS) -,1,0)
   ifeq ($(has_libelf),1)
     objtool_target := tools/objtool FORCE
   else
